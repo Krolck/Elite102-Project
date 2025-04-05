@@ -5,24 +5,85 @@ from mysql.connector import connect, Error
 
 """
 TODO: 
-- Set Up Account Registration
+- Set Up DB // Done
+- Set Up CLI Account System
+- Set Up Flask 
+- Transfer CLI To Full Stack App with UI
+"""
+
+# Constants
+ACCOUNTS_QUERY = """CREATE TABLE IF NOT EXISTS accounts (
+id INT PRIMARY KEY AUTO_INCREMENT,
+username VARCHAR(80),
+password VARCHAR(80),
+pin TINYINT(5) UNSIGNED,
+balance DECIMAL(65, 2)
+)
 """
 
 
-if __name__ == "__main__":
+
+
+def initDB():
+    bankdb = connect(
+    host="localhost",
+    # user=input("Enter username: "),
+    # password=getpass("Enter password: ")
+    user = 'root', # REMEMBER to change
+    password = "LeoSQLDB#123", # REMEMBER to change
+    database = "bank"
+        ) 
+    cursor = bankdb.cursor
+    cursor.execute(ACCOUNTS_QUERY)
+    cursor.execute("DESCRIBE accounts")
+    return bankdb
+
+
+database = initDB()
+cursor = initDB.cursor()
+
+
+# REMEMBER to add input sanitization 
+def register():
+    username = input("Enter Username: ")
+    password = input("Enter Password: ")
+    cursor.execute("INSERT INTO accounts (username, password) VALUES (%s, %s)", (username, password))
+    database.commit()
+    cursor.execute("SELECT * FROM accounts")
+
+def login():
+    username = input("Enter Username: ")
+    password = input("Enter Password: ")
+    cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password,))
+    account = cursor.fetchone()
+
+    if account:   
+        return True, f"Successfully logged In! Hello {account.username}"
+    else:
+        return False, f"Incorrect Credentials. Please try again." 
+
+
+def printCursor():
+    for i in cursor:
+        print(i)
+
+def main():
     try:
-        with connect(
-            host="localhost",
-            # user=input("Enter username: "),
-            # password=getpass("Enter password: "),
-             user = 'root', # Remember to change
-             password = "LeoSQLDB#123", # Remember to change
-             database="accounts",
-        ) as connection:
-            initDBQuery = "CREATE DATABASE accounts"
-            with connection.cursor() as cursor:
-                cursor.execute(initDBQuery)
-                for db in cursor:
-                    print(db)
+        bankdb = initDB()
+        cursor = bankdb.cursor()
+        
+        
+        
+        # register(cursor)
+        while not result:
+            result, output = login(cursor)
+            print(output)
+
+
     except Error as e:
         print(e)
+
+if __name__ == "__main__":
+   main()
+
+    
