@@ -13,11 +13,11 @@ TODO:
 
 # Constants
 ACCOUNTS_QUERY = """CREATE TABLE IF NOT EXISTS accounts (
-id INT PRIMARY KEY AUTO_INCREMENT,
-username VARCHAR(80),
-password VARCHAR(80),
+id INT PRIMARY KEY AUTO_INCREMENT UNIQUE NOT NULL,
+username VARCHAR(80) UNIQUE NOT NULL,
+password VARCHAR(80) NOT NULL,
 pin TINYINT(5) UNSIGNED,
-balance DECIMAL(65, 2)
+balance DECIMAL(65, 2) DEFAULT 0
 )
 """
 
@@ -25,59 +25,110 @@ balance DECIMAL(65, 2)
 
 
 def initDB():
-    bankdb = connect(
+    connection = connect(
     host="localhost",
     # user=input("Enter username: "),
     # password=getpass("Enter password: ")
-    user = 'root', # REMEMBER to change
-    password = "LeoSQLDB#123", # REMEMBER to change
+    user = 'root', # REMEMBER to change to user input later
+    password = "LeoSQLDB#123", # REMEMBER to change to get pass later
     database = "bank"
-        ) 
-    cursor = bankdb.cursor
+        )
+    cursor = connection.cursor()
+    cursor.execute("CREATE DATABASE IF NOT EXISTS bank")
     cursor.execute(ACCOUNTS_QUERY)
-    cursor.execute("DESCRIBE accounts")
-    return bankdb
+    # cursor.execute("DESCRIBE accounts")
+    connection.commit()
+    cursor.close()
+    return connection
 
 
-database = initDB()
-cursor = initDB.cursor()
 
+
+def getAccount(connection, id):
+    cursor = connection.cursor()
+    cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
+    account = cursor.fetchone()
+    return {  
+    "ID": account[0],
+    "Username" : account[1],
+    "Password" : account[2],
+    "Pin" : account[3],
+    "Balance" : account[4]       
+        }
 
 # REMEMBER to add input sanitization 
-def register():
-    username = input("Enter Username: ")
-    password = input("Enter Password: ")
-    cursor.execute("INSERT INTO accounts (username, password) VALUES (%s, %s)", (username, password))
-    database.commit()
-    cursor.execute("SELECT * FROM accounts")
+def register(connection):
+    try:
+        cursor = connection.cursor()
+        username = input("Register Username: ")
+        password = input("Register Password: ")
+        cursor.execute(f"INSERT INTO accounts ({username}, {password})")
+        connection.commit()
+        # cursor.execute("SELECT * FROM accounts")
+        cursor.close()
+    except Error as e:
+        print("Please Enter Valid Credentials")
+        print(e)
+        register(connection)
 
-def login():
-    username = input("Enter Username: ")
-    password = input("Enter Password: ")
-    cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password,))
-    account = cursor.fetchone()
+def login(connection):
+    cursor = connection.cursor()
+    try:
+        username = input("Enter Username: ")
+        password = input("Enter Password: ")
+        cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password))
+        account = cursor.fetchone()
+        cursor.close()
+    
+        if account:
+            print(f"Successfully logged In! Hello {account[1]}")
+            return account[0]
+        else:
+            print("Incorrect credentials. Please try again.")
+            login(connection)
+    except Error as e:
+        print("Incorrect credentials. Please try again.")
+        print(e)
+        login(connection)
+        
 
-    if account:   
-        return True, f"Successfully logged In! Hello {account.username}"
-    else:
-        return False, f"Incorrect Credentials. Please try again." 
+def deposit(connection, id):
+    cursor = connection.cursor()
+    account = getAccount(connection, id)
+    try:
+        amount = float(input("How much would you like to deposit?"))
+        cursor.execute(f"UPDATE accounts SET balance = balance + {amount} WHERE id = {account["ID"]}")
+        connection.commit()
+        cursor.close()
+        account = getAccount(connection, id)
+        print(f"Deposited {amount}. Your new balance is {account["Balance"]}.")
+    except ValueError as e:
+        print("Please Enter a valid amount")
+        deposit(connection, id)
+
+def checkBalance(connection, id):
+    cursor = connection.cursor()
+    account = getAccount(connection, id)
+    print(account["Balance"])
 
 
-def printCursor():
+def printCursor(connection):
+    cursor = connection.cursor()
     for i in cursor:
         print(i)
+    cursor.close()
 
 def main():
     try:
-        bankdb = initDB()
-        cursor = bankdb.cursor()
         
-        
-        
-        # register(cursor)
-        while not result:
-            result, output = login(cursor)
-            print(output)
+        connection = initDB()
+
+        # register(connection)
+
+        id = login(connection)
+
+        deposit(connection, id)
+        checkBalance(connection, id)
 
 
     except Error as e:
