@@ -1,4 +1,4 @@
-from flask import app, Flask, render_template, request
+from flask import app, Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 from getpass import getpass
 from mysql.connector import connect, Error
@@ -25,13 +25,11 @@ balance DECIMAL(65, 2) DEFAULT 0
 """
 
 
-app = Flask(__name__, template_folder= "src/pages/templates", static_folder= "src/pages/static")
+app = Flask(__name__, template_folder= "../pages/templates", static_folder= "../pages/static")
 app.config['SECRET_KEY'] = 'testkey'
 CORS(app)
 
-@app.route("/")
-def home():
-    return render_template("register.html")
+
 
 def initDB():
     connection = connect(
@@ -66,25 +64,42 @@ def getAccount(connection, id):
     "Balance" : account[4]       
         }
 
+@app.route("/")
+def home():
+    return render_template("register.html")
+
+
+@app.route("/login")
+def loginPage():
+    return render_template("login.html")
+
+
 # REMEMBER to add input sanitization 
-@app.route("/register", methods = ["POST"])
-def register(connection): # change to "createAccount" later 
+@app.route("/api/register", methods = ["POST"])
+def register(): # change to "createAccount" later 
     try:
+        data = request.get_json()
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+        connection = initDB()
+        username = data['username']
+        password = data['password']
 
         cursor = connection.cursor()
-        username = input("Register Username: ")
-        password = input("Register Password: ")
         cursor.execute("INSERT INTO accounts (username, password) VALUES (%s, %s)", (username, password))
         connection.commit()
         # cursor.execute("SELECT * FROM accounts")
         cursor.close()
-        print(f"Registed {username}")
+        connection.close()
+        return jsonify({'message': f'Successfully registered {username}'}), 201
+
     except Error as err:
-        
-        if err.errno == 1062:
-            print("Sorry, this username is taken. Please try a new one.")
-            register(connection)
         print(err)
+        if err.errno == 1062:
+            print("4094094094")
+            return jsonify({"error": "Username Already Taken, Please Pick A New One"}), 409    
+        return jsonify({"error": str(err.msg)}, err.errno)
+        
 
 def unregister(connection, id): # change to "deleteAccount" later
     account = getAccount(connection, id)

@@ -6,14 +6,13 @@
         <body>
             <div class="container">
                 <h1>Register</h1> 
-                
-                <form onsubmit="return register(event);" class="form">
+                <form class="form" id="register" onsubmit="return false">
                     <label for="username">Username</label>
-                    <input type="text" name="username" id = "username"  required/>
+                    <input type="text" name="username" id = "username" required/>
                     <label for="password">Password</label>
-                    <input type="text" name="password" id = "password" />
-                    <input type="submit" name="register" value="Register" required/>
-                    <output for="password, username", name = "result"></output>
+                    <input type="text" name="password" id = "password" required />
+                    <button type="submit">Register</button>
+                    <output for="password, username", name = "output" id="output"></output>
                 </form>
                 
             </div>

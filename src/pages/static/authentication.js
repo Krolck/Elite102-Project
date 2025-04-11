@@ -1,29 +1,56 @@
 
-async function register(event) {
-    const url = window.location.href + "/register"
 
-    const formData = new FormData(event.target);
-    console.log(formData)
-    const username = formData.get('username')
-    const password = formData.get('password')
-    const result = formData.get("result")
 
-    event.preventDefault();
 
+    // TODO:
+    // Implement All authentication
+
+document.addEventListener("DOMContentLoaded", () =>{
+    const registerForm = document.getElementById("register");
+    registerForm.addEventListener('submit', function(event){
+    register(event, registerForm)
+    })
+})
+
+async function register(event, registerForm) {
+
+    
+    const output = document.getElementById("output")
+    const url = window.location.href + "/api/register"
+    
+    const formData = new FormData(event.target)
+    const data = Object.fromEntries(formData.entries())
+    
+    console.log(data)
+
+    
     fetch(url,{
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
     })
+
     .then(response =>{
+
+        console.log(response)
         if (!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            return response.json().then(errorData => {
+                // REMEMBER to change errors to change depending on code rather than relying on server
+                output.value = errorData.error 
+                throw new Error(`HTTP Error: ${errorData.error}`);
+                
+            })
         }
-        result.value = response
-        return response
+        return response.json()
     })
     .then(data =>{
-
-        // Login
+        output.value = data.message
+        window.location.href = 'login'
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error(error)
+        
+})
 }
