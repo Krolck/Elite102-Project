@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src = "../static/authentication.js"></script>
+    </head>
+        <body>
+            <div class="container">
+                <h1>Register</h1> 
+                
+                <form onsubmit="return register(event);" class="form">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id = "username"  required/>
+                    <label for="password">Password</label>
+                    <input type="text" name="password" id = "password" />
+                    <input type="submit" name="register" value="Register" required/>
+                    <output for="password, username", name = "result"></output>
+                </form>
+                
+            </div>
+        </body>
+</html>

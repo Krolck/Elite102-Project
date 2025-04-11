@@ -1,13 +1,9 @@
-from flask import app, Flask
+from flask import app, Flask, render_template, request
+from flask_cors import CORS
 from getpass import getpass
 from mysql.connector import connect, Error
-import mysql
 
-import mysql.connector
-import mysql.connector.errorcode
-import mysql.vendor
 
-import mysql.vendor.plugin
 
 
 """
@@ -29,7 +25,13 @@ balance DECIMAL(65, 2) DEFAULT 0
 """
 
 
+app = Flask(__name__, template_folder= "src/pages/templates", static_folder= "src/pages/static")
+app.config['SECRET_KEY'] = 'testkey'
+CORS(app)
 
+@app.route("/")
+def home():
+    return render_template("register.html")
 
 def initDB():
     connection = connect(
@@ -65,6 +67,7 @@ def getAccount(connection, id):
         }
 
 # REMEMBER to add input sanitization 
+@app.route("/register", methods = ["POST"])
 def register(connection): # change to "createAccount" later 
     try:
 
@@ -180,26 +183,26 @@ def printCursor(connection):
 
 def main():
     try:
-        
+        app.run(debug=True)
         connection = initDB()
-        id = None
-        while True:
-            action = str.lower(input("What would you like to do?"))
-            match action:
-                case "register":
-                    register(connection)
-                case "unregister":
-                    unregister(connection, id)
-                case "login":
-                    id = login(connection)
-                case "deposit":
-                    deposit(connection, id)
-                case "check":
-                    checkBalance(connection, id)
-                case "withdraw":
-                    withdraw(connection, id)
-                case _:
-                    print("Invalid Answer")
+        # id = None
+        # while True:
+        #     action = str.lower(input("What would you like to do?"))
+        #     match action:
+        #         case "register":
+        #             register(connection)
+        #         case "unregister":
+        #             unregister(connection, id)
+        #         case "login":
+        #             id = login(connection)
+        #         case "deposit":
+        #             deposit(connection, id)
+        #         case "check":
+        #             checkBalance(connection, id)
+        #         case "withdraw":
+        #             withdraw(connection, id)
+        #         case _:
+        #             print("Invalid Answer")
                 
 
     except Error as e:
