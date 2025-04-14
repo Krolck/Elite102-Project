@@ -1,18 +1,18 @@
 
-
-
-
     // TODO:
     // Implement All authentication
-
 document.addEventListener("DOMContentLoaded", () =>{
     const registerForm = document.getElementById("register");
-    registerForm.addEventListener('submit', function(event){
-    register(event, registerForm)
+    const loginButton = document.getElementById("login")
+    registerForm.addEventListener('submit', register)
+    loginButton.addEventListener('click', function(){
+    window.location.href = 'login'
     })
 })
 
-async function register(event, registerForm) {
+
+
+async function register(event) {
 
     
     const output = document.getElementById("output")
@@ -24,7 +24,7 @@ async function register(event, registerForm) {
     console.log(data)
 
     
-    fetch(url,{
+    fetch("/api/register",{
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -47,10 +47,11 @@ async function register(event, registerForm) {
     })
     .then(data =>{
         output.value = data.message
-        window.location.href = 'login'
+        window.location.href = '/dashboard'
     })
     .catch(error => {
         console.error(error)
         
 })
 }
+

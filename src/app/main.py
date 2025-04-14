@@ -69,10 +69,6 @@ def home():
     return render_template("register.html")
 
 
-@app.route("/login")
-def loginPage():
-    return render_template("login.html")
-
 
 # REMEMBER to add input sanitization 
 @app.route("/api/register", methods = ["POST"])
@@ -96,10 +92,47 @@ def register(): # change to "createAccount" later
     except Error as err:
         print(err)
         if err.errno == 1062:
-            print("4094094094")
             return jsonify({"error": "Username Already Taken, Please Pick A New One"}), 409    
         return jsonify({"error": str(err.msg)}, err.errno)
         
+
+@app.route("/api/login", methods = ["POST"])
+def login():
+
+    try:
+        data = request.get_json()
+        if not data or 'username' not in data or 'password' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        username = data['username']
+        password = data['password']
+
+        connection = initDB()
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password))
+        account = cursor.fetchone() 
+        
+        cursor.close()
+        connection.close()
+
+        if account:
+            return jsonify({'message': f'Successfully Logged in'}), 200
+        else:
+            return jsonify({'error': f'Invalid Credentials. Please Try Again.'}), 401
+            
+    except Error as err:
+        print(err)
+        return jsonify({"error": str(err.msg)}, err.errno)
+
+@app.route("/login")
+def loginPage():
+    return render_template("login.html")
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
+
 
 def unregister(connection, id): # change to "deleteAccount" later
     account = getAccount(connection, id)
@@ -114,25 +147,7 @@ def unregister(connection, id): # change to "deleteAccount" later
 
 
 
-def login(connection):
-    cursor = connection.cursor()
-    try:
-        username = input("Enter Username: ")
-        password = input("Enter Password: ")
-        cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password))
-        account = cursor.fetchone()
-        cursor.close()
-        
-        if account:
-            print(f"Successfully logged In! Hello {account[1]}")
-            return account[0]
-        else:
-            print("Incorrect credentials. Please try again.")
-            login(connection)
-    except Error as err:
-        print("Incorrect credentials. Please try again.")
-        print(err)
-        login(connection)
+
         
 
 
