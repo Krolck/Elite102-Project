@@ -16,7 +16,6 @@ async function register(event) {
 
     
     const output = document.getElementById("output")
-    const url = window.location.href + "/api/register"
     
     const formData = new FormData(event.target)
     const data = Object.fromEntries(formData.entries())
@@ -38,7 +37,7 @@ async function register(event) {
         if (!response.ok){
             return response.json().then(errorData => {
                 // REMEMBER to change errors to change depending on code rather than relying on server
-                output.value = errorData.error 
+                output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 
             })
@@ -47,7 +46,7 @@ async function register(event) {
     })
     .then(data =>{
         output.value = data.message
-        window.location.href = '/dashboard'
+        window.location.href = "login"
     })
     .catch(error => {
         console.error(error)

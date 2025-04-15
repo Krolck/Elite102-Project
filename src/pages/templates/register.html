@@ -4,6 +4,13 @@
         <script src = "../static/register.js"></script>
     </head>
         <body>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {{ message }}
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             <div class="container">
                 <h1>Register</h1> 
                 <form class="form" id="register" onsubmit="return false">

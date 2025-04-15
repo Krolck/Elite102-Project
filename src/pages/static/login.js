@@ -19,7 +19,6 @@ async function login(event) {
     const formData = new FormData(event.target)
     const data = Object.fromEntries(formData.entries())
     
-    console.log(data)
 
     
     fetch("/api/login",{
@@ -32,11 +31,12 @@ async function login(event) {
 
     .then(response =>{
 
-        console.log(response)
+        
+        
         if (!response.ok){
             return response.json().then(errorData => {
                 // REMEMBER to change errors to change depending on code rather than relying on server
-                output.value = errorData.error 
+                output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 
             })
@@ -45,7 +45,7 @@ async function login(event) {
     })
     .then(data =>{
         output.value = data.message
-        window.location.href = '/dashboard'
+        window.location.href = "dashboard"
     })
     .catch(error => {
         console.error(error)

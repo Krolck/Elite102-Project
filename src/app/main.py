@@ -1,4 +1,4 @@
-from flask import app, Flask, render_template, request, jsonify, session, redirect, url_for
+from flask import app, Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_cors import CORS
 from getpass import getpass
 from mysql.connector import connect, Error
@@ -66,13 +66,13 @@ def getAccount(connection, id):
 
 @app.route("/")
 def home():
-    return render_template("register.html")
+    return redirect(url_for("registerPage"))
 
 
 
 # REMEMBER to add input sanitization 
 @app.route("/api/register", methods = ["POST"])
-def register(): # change to "createAccount" later 
+def registerAPI(): # change to "createAccount" later 
     try:
         data = request.get_json()
         if not data or 'username' not in data or 'password' not in data:
@@ -92,17 +92,16 @@ def register(): # change to "createAccount" later
     except Error as err:
         print(err)
         if err.errno == 1062:
-            return jsonify({"error": "Username Already Taken, Please Pick A New One"}), 409    
-        return jsonify({"error": str(err.msg)}, err.errno)
+            return jsonify({"message": "Username Already Taken, Please Pick A New One"}), 409    
+        return jsonify({"message": str(err.msg)}, err.errno)
         
 
 @app.route("/api/login", methods = ["POST"])
-def login():
-
+def loginAPI():
     try:
         data = request.get_json()
         if not data or 'username' not in data or 'password' not in data:
-            return jsonify({'error': 'Missing required fields'}), 400
+            return jsonify({ "message": 'Missing required fields'}), 400
 
         username = data['username']
         password = data['password']
@@ -119,19 +118,30 @@ def login():
         if account:
             return jsonify({'message': f'Successfully Logged in'}), 200
         else:
-            return jsonify({'error': f'Invalid Credentials. Please Try Again.'}), 401
+            return jsonify({ "message": f'Invalid Credentials. Please Try Again.'}), 401
             
     except Error as err:
         print(err)
-        return jsonify({"error": str(err.msg)}, err.errno)
 
-@app.route("/login")
+        return jsonify(status = "error", message = f"{err.errno} : {err.msg}")
+
+@app.route("/register", methods = ["GET", "POST"])
+def registerPage():
+    if request.method == "GET":
+        return render_template("register.html")
+    return redirect(url_for("registerPage"))
+
+@app.route("/login", methods = ["GET", "POST"])
 def loginPage():
-    return render_template("login.html")
+    if request.method == "GET":
+        return render_template("login.html")
+    return redirect(url_for("loginPage"))
 
-@app.route("/dashboard")
+@app.route("/dashboard", methods = ["GET", "POST"])
 def dashboard():
-    return render_template("dashboard.html")
+    if request.method == "GET":
+        return render_template("dashboard.html")
+    return redirect(url_for("dashboard"))
 
 
 def unregister(connection, id): # change to "deleteAccount" later
