@@ -23,7 +23,7 @@ async function register(event) {
     console.log(data)
 
     
-    fetch("/api/register",{
+    fetch("/register",{
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ async function register(event) {
     })
     .then(data =>{
         output.value = data.message
-        window.location.href = "login"
+        window.location.href = "/login"
     })
     .catch(error => {
         console.error(error)

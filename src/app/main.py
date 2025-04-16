@@ -1,8 +1,9 @@
 from flask import app, Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_cors import CORS
-from getpass import getpass
+from flask_login import LoginManager, UserMixin, login_required, login_user
+from getpass import getpass 
 from mysql.connector import connect, Error
-
+from flask_bcrypt import Bcrypt
 
 
 
@@ -19,15 +20,19 @@ ACCOUNTS_QUERY = """CREATE TABLE IF NOT EXISTS accounts (
 id INT PRIMARY KEY AUTO_INCREMENT UNIQUE NOT NULL,
 username VARCHAR(80) UNIQUE NOT NULL,
 password VARCHAR(80) NOT NULL,
-pin TINYINT(5) UNSIGNED,
 balance DECIMAL(65, 2) DEFAULT 0
 )
 """
 
+loginManager = LoginManager()
 
 app = Flask(__name__, template_folder= "../pages/templates", static_folder= "../pages/static")
 app.config['SECRET_KEY'] = 'testkey'
+
 CORS(app)
+bcrypt = Bcrypt(app) 
+loginManager.init_app(app)
+
 
 
 
@@ -49,9 +54,33 @@ def initDB():
     return connection
 
 
+class User(UserMixin):
+    def __init__(self, id, username, password, balance):
+        self.id = id
+        self.username = username
+        self.password = password
+        self.balance = balance
+    def get_id(self):
+        return str(self.id)
+        
+@loginManager.user_loader
+def loadUser(id):
 
+    connection = initDB()
+    cursor = connection.cursor()
+    cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
+    account = cursor.fetchone()
+
+    user = User(id, account[1],  account[2], account[3])
+    return user
+
+
+@loginManager.unauthorized_handler
+def unauthorized():
+    return jsonify({'message': "Unauthorized"}), 401
 
 def getAccount(connection, id): 
+
     cursor = connection.cursor()
     cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
     account = cursor.fetchone()
@@ -60,19 +89,19 @@ def getAccount(connection, id):
     "ID": account[0],
     "Username" : account[1],
     "Password" : account[2],
-    "Pin" : account[3],
-    "Balance" : account[4]       
+    "Balance" : account[3]       
         }
 
 @app.route("/")
 def home():
-    return redirect(url_for("registerPage"))
-
-
+    return redirect(url_for("register"))
 
 # REMEMBER to add input sanitization 
-@app.route("/api/register", methods = ["POST"])
-def registerAPI(): # change to "createAccount" later 
+@app.route("/register", methods = ["POST", "GET"])
+def register(): # change to "createAccount" later 
+    print(request.method)
+    if request.method == "GET":
+        return render_template("register.html")
     try:
         data = request.get_json()
         if not data or 'username' not in data or 'password' not in data:
@@ -96,8 +125,10 @@ def registerAPI(): # change to "createAccount" later
         return jsonify({"message": str(err.msg)}, err.errno)
         
 
-@app.route("/api/login", methods = ["POST"])
-def loginAPI():
+@app.route("/login", methods = ["POST", "GET"])
+def login():
+    if request.method == "GET":
+        return render_template("login.html")
     try:
         data = request.get_json()
         if not data or 'username' not in data or 'password' not in data:
@@ -114,8 +145,10 @@ def loginAPI():
         
         cursor.close()
         connection.close()
-
+        
         if account:
+            user = loadUser(account[0])
+            login_user(user)
             return jsonify({'message': f'Successfully Logged in'}), 200
         else:
             return jsonify({ "message": f'Invalid Credentials. Please Try Again.'}), 401
@@ -125,23 +158,12 @@ def loginAPI():
 
         return jsonify(status = "error", message = f"{err.errno} : {err.msg}")
 
-@app.route("/register", methods = ["GET", "POST"])
-def registerPage():
-    if request.method == "GET":
-        return render_template("register.html")
-    return redirect(url_for("registerPage"))
 
-@app.route("/login", methods = ["GET", "POST"])
-def loginPage():
-    if request.method == "GET":
-        return render_template("login.html")
-    return redirect(url_for("loginPage"))
-
-@app.route("/dashboard", methods = ["GET", "POST"])
+@app.route("/dashboard", methods = ["GET"])
+@login_required
 def dashboard():
-    if request.method == "GET":
-        return render_template("dashboard.html")
-    return redirect(url_for("dashboard"))
+    return render_template("dashboard.html")
+
 
 
 def unregister(connection, id): # change to "deleteAccount" later
@@ -223,8 +245,9 @@ def printCursor(connection):
 
 def main():
     try:
-        app.run(debug=True)
         connection = initDB()
+        app.run(debug=True)
+        
         # id = None
         # while True:
         #     action = str.lower(input("What would you like to do?"))

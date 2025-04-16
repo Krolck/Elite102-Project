@@ -21,7 +21,7 @@ async function login(event) {
     
 
     
-    fetch("/api/login",{
+    fetch("login",{
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ async function login(event) {
     })
     .then(data =>{
         output.value = data.message
-        window.location.href = "dashboard"
+        window.location.href = "/dashboard"
     })
     .catch(error => {
         console.error(error)
