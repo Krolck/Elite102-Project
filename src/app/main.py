@@ -147,7 +147,7 @@ def login():
     except Error as err:
         print(err)
 
-        return jsonify(status = "error", message = f"{err.errno} : {err.msg}")
+        return jsonify({'message' : f"{err.errno} : {err.msg}"})
 
 @loginManager.user_loader
 def loadUser(id):
@@ -155,7 +155,6 @@ def loadUser(id):
     cursor = connection.cursor()
     cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
     account = cursor.fetchone()
-
     user = User(id, account[1],  account[2], account[3])
     return user
 
@@ -192,12 +191,6 @@ def unregister():
     return "Unregistered"
         
 
-
-
-
-        
-
-
 @app.route("/deposit", methods = ["POST"])
 @login_required
 def deposit():
@@ -229,7 +222,7 @@ def withdraw():
         amount = Decimal("{:.2f}".format(float(data['amount'])))
         if amount > current_user.balance:
             
-            return jsonify({'message' : f"You only have {current_user.balance}. You can't withdraw {amount}!",'balance' : current_user.balance - amount })
+            return jsonify({'message' : f"You only have {current_user.balance}. You can't withdraw {amount}!",'balance' : current_user.balance })
         cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
         connection.commit()
         cursor.close()
@@ -237,30 +230,42 @@ def withdraw():
     except ValueError as err:
         jsonify({'message' : "Please Enter a valid amount"})
 
-def modify(connection, id):
-    cursor = connection.cursor()
-    account = getAccount(connection, id)
-    mod = str.lower(input("What would you like the modify"))
-    match mod:
-        case "username":
-            username = input("What would you like your new username to be? ")
-            cursor.execute("UPDATE accounts SET username = %s WHERE id = %s", (username, account["ID"] ))
-            print("Username changed")
-        case "password":
-            password = input("What would you like your new password to be? ")
-            cursor.execute("UPDATE accounts SET password = %s WHERE id = %s", (password, account["ID"]))
-            print("Password changed")
-        case _:
-            print("Invalid Answer")
+@app.route("/username", methods = ["POST"])
+@login_required
+def changeUsername():
+    try:
+        data = request.get_json()
+        print(data)
+        connection = initDB()
+        cursor = connection.cursor()
+        cursor.execute("UPDATE accounts SET username = %s WHERE id = %s", (data['value'], current_user.id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({'message' : f"Username changed to {data['value']}"})
+    except Exception as err:
+        print(err)
+        if err.errno == 1062:
+            return jsonify({"message": "Username Already Taken, Please Pick A New One"}), 409
+        return jsonify({'message' : f"{err.errno} : {err.msg}"})
 
-
-
-
-def printCursor(connection):
-    cursor = connection.cursor()
-    for i in cursor:
-        print(i)
-    cursor.close()
+@app.route("/password", methods = ["POST"])
+@login_required
+def changePassword():
+    try:
+        data = request.get_json()
+        connection = initDB()
+        cursor = connection.cursor()
+        cursor.execute("UPDATE accounts SET password = %s WHERE id = %s", (data['value'], current_user.id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return jsonify({'message' : f"Password changed to {data['value']}"})
+    except Error as err:
+        print(err)
+        if err.errno == 1062:
+            return jsonify({"message": "Password Already Taken, Please Pick A New One"}), 409
+        return jsonify({'message' : f"{err.errno} : {err.msg}"})
 
 
 
@@ -268,26 +273,6 @@ def main():
     try:
         connection = initDB()
         app.run(debug=True)
-        
-        # id = None
-        # while True:
-        #     action = str.lower(input("What would you like to do?"))
-        #     match action:
-        #         case "register":
-        #             register(connection)
-        #         case "unregister":
-        #             unregister(connection, id)
-        #         case "login":
-        #             id = login(connection)
-        #         case "deposit":
-        #             deposit(connection, id)
-        #         case "check":
-        #             checkBalance(connection, id)
-        #         case "withdraw":
-        #             withdraw(connection, id)
-        #         case _:
-        #             print("Invalid Answer")
-                
 
     except Error as e:
         print(e)
