@@ -178,16 +178,18 @@ def dashboard():
     return render_template("dashboard.html", username = current_user.username, balance = current_user.balance)
 
 
+@app.route("/unregister", methods = ["POST"])
+@login_required
+def unregister():
 
-def unregister(connection, id): # change to "deleteAccount" later
-    account = getAccount(connection, id)
-    confirm = str.lower(input(f"Are you sure you want to delete {account["Username"]}"))
-    if confirm == "yes":
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM accounts WHERE id = %s", (account["ID"],))
-        connection.commit()
-        cursor.close()
-        print(f"Unregistered {account["Username"]}")
+    connection = initDB()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM accounts WHERE id = %s", (current_user.id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    logout_user()
+    return "Unregistered"
         
 
 
@@ -251,9 +253,7 @@ def modify(connection, id):
         case _:
             print("Invalid Answer")
 
-def checkBalance(connection, id):
-    account = getAccount(connection, id)
-    print(f"Your balance is: {account["Balance"]}.")
+
 
 
 def printCursor(connection):

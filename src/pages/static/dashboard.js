@@ -1,12 +1,19 @@
 const balance = "{{balance}}"
 
-document.addEventListener("DOMContentLoaded", () => {
+let unregisterPressed = false
 
+let unregisterButton = null
+
+document.addEventListener("DOMContentLoaded", () => {
+    unregisterButton = document.getElementById("unregister")
     const depositForm = document.getElementById("deposit");
     const withdrawForm =document.getElementById("withdraw");
     depositForm.addEventListener('submit', deposit)
     withdrawForm.addEventListener('submit', withdraw)
+    
+
 })
+
 
 async function deposit(event) {
 
@@ -56,10 +63,6 @@ async function withdraw(event) {
     
     const formData = new FormData(event.target)
     const data = Object.fromEntries(formData.entries())
-    if (data['amount'] > "{{ balance }}"){
-        output.value = "Not Enough Money"
-    }
-        
 
     fetch("withdraw",{
         method: 'POST',
@@ -93,6 +96,23 @@ async function withdraw(event) {
 
 async function logout() {
     fetch("logout",{
+        method: 'POST',
+        headers: {
+        },
+    })
+    window.location.href = "/login"
+        
+}
+
+
+async function unregister() {
+    if (!unregisterPressed){
+        unregisterPressed = true
+        unregisterButton.textContent = "Are you sure?"
+        return
+    }
+
+    fetch("unregister",{
         method: 'POST',
         headers: {
         },
