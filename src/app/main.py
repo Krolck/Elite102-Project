@@ -1,11 +1,11 @@
 from flask import app, Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from flask_cors import CORS
-from flask_login import LoginManager, UserMixin, login_required, login_user
+from flask_login import LoginManager, UserMixin, login_required, login_user, logout_user, current_user
 from getpass import getpass 
 from mysql.connector import connect, Error
 from flask_bcrypt import Bcrypt
 
-
+from decimal import Decimal
 
 """
 TODO: 
@@ -41,8 +41,8 @@ def initDB():
     host="localhost",
     # user=input("Enter username: "),
     # password=getpass("Enter password: ")
-    user = 'root', # REMEMBER to change to user input later
-    password = "LeoSQLDB#123", # REMEMBER to change to get pass later
+    user = 'root',
+    password = "LeoSQLDB#123", 
     database = "bank"
         )
     cursor = connection.cursor()
@@ -63,22 +63,8 @@ class User(UserMixin):
     def get_id(self):
         return str(self.id)
         
-@loginManager.user_loader
-def loadUser(id):
 
-    connection = initDB()
-    cursor = connection.cursor()
-    cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
-    account = cursor.fetchone()
-
-    user = User(id, account[1],  account[2], account[3])
-    return user
-
-
-@loginManager.unauthorized_handler
-def unauthorized():
-    return jsonify({'message': "Unauthorized"}), 401
-
+# REMOVE LATER
 def getAccount(connection, id): 
 
     cursor = connection.cursor()
@@ -92,9 +78,14 @@ def getAccount(connection, id):
     "Balance" : account[3]       
         }
 
+
+# Home Page
 @app.route("/")
 def home():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
     return redirect(url_for("register"))
+
 
 # REMEMBER to add input sanitization 
 @app.route("/register", methods = ["POST", "GET"])
@@ -124,7 +115,7 @@ def register(): # change to "createAccount" later
             return jsonify({"message": "Username Already Taken, Please Pick A New One"}), 409    
         return jsonify({"message": str(err.msg)}, err.errno)
         
-
+# // LOGIN 
 @app.route("/login", methods = ["POST", "GET"])
 def login():
     if request.method == "GET":
@@ -158,11 +149,33 @@ def login():
 
         return jsonify(status = "error", message = f"{err.errno} : {err.msg}")
 
+@loginManager.user_loader
+def loadUser(id):
+    connection = initDB()
+    cursor = connection.cursor()
+    cursor.execute(f"SELECT * FROM accounts WHERE id = {id}")
+    account = cursor.fetchone()
+
+    user = User(id, account[1],  account[2], account[3])
+    return user
+
+
+@loginManager.unauthorized_handler
+def unauthorized():
+    return jsonify({'message': "Unauthorized"}), 401
+
+@app.route("/logout", methods = ["POST"])
+@login_required
+def logout():
+    logout_user()
+    return "Logout"
+
+# //LOGIN
 
 @app.route("/dashboard", methods = ["GET"])
 @login_required
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", username = current_user.username, balance = current_user.balance)
 
 
 
@@ -183,36 +196,44 @@ def unregister(connection, id): # change to "deleteAccount" later
         
 
 
+@app.route("/deposit", methods = ["POST"])
+@login_required
+def deposit():
 
-def deposit(connection, id):
-    cursor = connection.cursor()
-    account = getAccount(connection, id)
     try:
-        amount = float(input("How much would you like to deposit?"))
-        cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, account["ID"]))
+        data = request.get_json()
+        amount = Decimal("{:.2f}".format(float(data['amount'])))
+        connection = initDB()
+        cursor = connection.cursor()
+        cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, current_user.id))
         connection.commit()
         cursor.close()
-        account = getAccount(connection, id)
-        print(f"Deposited {amount}. Your new balance is {account["Balance"]}.")
+        connection.close()
+        return jsonify({'message' : f"Deposited ${amount}.", 'balance' : amount + current_user.balance})
     except ValueError as err:
-        print("Please Enter a valid amount")
-        deposit(connection, id)
+        print(err)
+        return jsonify({'message' : "Please Enter a valid amount"})
+    
 
-def withdraw(connection, id):
+
+    
+@app.route("/withdraw", methods = ["POST"])
+@login_required
+def withdraw():
+    connection = initDB()
     cursor = connection.cursor()
-    account = getAccount(connection, id)
     try:
-        amount = float(input("How much would you like to withdraw?"))
-        if amount > account["Balance"]:
-            print(f"You only have {account["Balance"]}. You can't withdraw {amount}!")
-            return
-        cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, account["ID"]))
+        data = request.get_json()
+        amount = Decimal("{:.2f}".format(float(data['amount'])))
+        if amount > current_user.balance:
+            
+            return jsonify({'message' : f"You only have {current_user.balance}. You can't withdraw {amount}!",'balance' : current_user.balance - amount })
+        cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
         connection.commit()
         cursor.close()
-        account = getAccount(connection, id)
-        print(f"Withdrew {amount}. Your new balance is {account["Balance"]}.")
+        return jsonify({'message' : f"Withdrew {amount}. Your new balance is {current_user.balance}.", 'balance' :  current_user.balance - amount})
     except ValueError as err:
-        print("Please Enter a valid amount")
+        jsonify({'message' : "Please Enter a valid amount"})
 
 def modify(connection, id):
     cursor = connection.cursor()

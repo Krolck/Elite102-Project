@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () =>{
 async function register(event) {
 
     
-    const output = document.getElementById("output")
+    const output = event.target.elements['output']
     
     const formData = new FormData(event.target)
     const data = Object.fromEntries(formData.entries())
@@ -36,7 +36,7 @@ async function register(event) {
         console.log(response)
         if (!response.ok){
             return response.json().then(errorData => {
-                // REMEMBER to change errors to change depending on code rather than relying on server
+                // REMEMBER input sanitization
                 output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 
