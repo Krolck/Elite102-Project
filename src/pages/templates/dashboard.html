@@ -2,20 +2,28 @@
 <html>
     <head>
         <script src = "../static/dashboard.js"></script>
+        <link rel="stylesheet" href="../static/dashboard.css">
         <body>
            <h1 id = "welcomeHeader">Hello, {{username}}! </h1> 
            <p id = "welcome"> You have currently have ${{balance}} in your balance. </p>
             <form class="form" id="deposit" onsubmit="return false">
                 <label for="amount">Amount to Deposit</label>
-                <input type="number" name="amount" id = "despositAmount" placeholder="0.00" required min="0" value="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$"/>
+                <input type="number" name="amount" id = "despositAmount" placeholder="0.00" required min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$"/>
                 <button type="submit">Deposit</button>
                 <output for="password, username", name = "output" id="despositOutput"></output>
             </form>
             <form class="form" id="withdraw" onsubmit="return false">
-                <label for="amount">Amount to Deposit</label>
-                <input type="number" name="amount" id = "withdrawAmount" placeholder="0.00" required min="0" value="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$"/>
+                <label for="amount">Amount to Withdraw</label>
+                <input type="number" name="amount" id = "withdrawAmount" placeholder="0.00" required min="0"  step="0.01" pattern="^\d+(?:\.\d{1,2})?$"/>
                 <button type="submit">Withdraw</button>
                 <output for="password, username", name = "output" id="withdrawOutput"></output>
+            </form>
+            <form class="form" id="transfer" onsubmit="return false">
+                <label for="amount">Amount to Transfer</label>
+                <input type="text" name="username" placeholder="Enter User" required/>
+                <input type="number" name="amount" id = "transferAmount" placeholder="0.00" required min="0" step="0.01" pattern="^\d+(?:\.\d{1,2})?$"/>
+                <button type="submit">Transfer</button>
+                <output for="transfer", name = "output" id="transferOutput"></output>
             </form>
             <form class="form" id="username" onsubmit="return false">
                 <label for="value">Change Username</label>

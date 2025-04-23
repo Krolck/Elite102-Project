@@ -1,13 +1,12 @@
 
     // TODO:
-    // Implement All authentication
 document.addEventListener("DOMContentLoaded", () =>{
     const loginForm = document.getElementById("login");
     const registerbutton = document.getElementById("register");
     loginForm.addEventListener('submit', login)
     registerbutton.addEventListener('click', function(){
         window.location.href = '/' 
-        // CHANGE ROUTE LATER
+
     })
 })
 
@@ -30,7 +29,7 @@ async function login(event) {
     .then(response =>{       
         if (!response.ok){
             return response.json().then(errorData => {
-                // REMEMBER to change errors to change depending on code rather than relying on server
+                // REMEMBER input sanitization
                 output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 

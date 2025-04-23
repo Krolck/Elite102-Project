@@ -148,6 +148,9 @@ def login():
         print(err)
 
         return jsonify({'message' : f"{err.errno} : {err.msg}"})
+    
+
+# // LOGIN
 
 @loginManager.user_loader
 def loadUser(id):
@@ -209,6 +212,35 @@ def deposit():
         print(err)
         return jsonify({'message' : "Please Enter a valid amount"})
     
+@login_required
+@app.route("/transfer", methods = ["POST"])
+def transfer():
+    try:
+        data = request.get_json()
+        print(data['username'])
+        if not data or 'username' not in data or 'amount' not in data:
+            return jsonify({'message': 'User does not exist', 'balance' : current_user.balance }), 400
+        connection = initDB()
+        cursor = connection.cursor()
+
+        cursor.execute("SELECT * FROM accounts WHERE username = %s", (data['username'],))
+        account = cursor.fetchone() 
+        
+        if account:
+            amount = Decimal("{:.2f}".format(float(data['amount'])))
+            if amount > current_user.balance:
+                return jsonify({'message' : f"You only have {current_user.balance}. You can't transfer {amount}!",'balance' : current_user.balance })
+            cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
+            cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, account[0]))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return jsonify({'message' : f"Transferred {amount} to {data['username']}. Your new balance is {current_user.balance - amount}.", 'balance' :  current_user.balance - amount})
+        else:
+            return jsonify({ "message": f'Invalid Credentials. Please Try Again.'}), 401        
+    except Error as err:
+        print(err)
+        return jsonify({'message' : f"{err.errno} : {err.msg}"})
 
 
     

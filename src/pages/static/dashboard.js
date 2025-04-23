@@ -10,11 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const withdrawForm =document.getElementById("withdraw");
     const usernameForm = document.getElementById("username");
     const passwordForm =document.getElementById("password");
+    const transferForm = document.getElementById("transfer");
     depositForm.addEventListener('submit', deposit)
     withdrawForm.addEventListener('submit', withdraw)
     usernameForm.addEventListener('submit', changeUsername)
     passwordForm.addEventListener('submit', changePassword)
-    
+    transferForm.addEventListener('submit', transfer)
 })
 
 
@@ -92,6 +93,42 @@ async function withdraw(event) {
 })
 }
 
+async function transfer(event) {
+    const welcomeText = document.getElementById('welcome')
+    const output = event.target.elements['output']
+    
+    const formData = new FormData(event.target)
+    const data = Object.fromEntries(formData.entries())
+
+        
+
+    fetch("transfer",{
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+
+    .then(response =>{       
+        if (!response.ok){
+            return response.json().then(errorData => {
+                output.value = errorData.message 
+                throw new Error(`HTTP Error: ${errorData.error}`);
+                
+            })
+        }
+        return response.json()
+    })
+    .then(data =>{
+        output.value = data.message
+        welcomeText.textContent = `You have currently have $${data.balance} in your balance.`
+    })
+    .catch(error => {
+        console.error(error)
+        
+})
+}
 
 async function logout() {
     fetch("logout",{
@@ -102,6 +139,8 @@ async function logout() {
     window.location.href = "/login"
         
 }
+
+
 
 
 async function unregister() {
