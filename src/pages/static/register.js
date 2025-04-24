@@ -1,6 +1,5 @@
 
-    // TODO:
-    // Implement All authentication
+// Event listners for form submission
 document.addEventListener("DOMContentLoaded", () =>{
     const registerForm = document.getElementById("register");
     const loginButton = document.getElementById("login")
@@ -34,9 +33,10 @@ async function register(event) {
     .then(response =>{
 
         console.log(response)
+        // if there's an error, return the error message
         if (!response.ok){
             return response.json().then(errorData => {
-                // REMEMBER input sanitization
+                
                 output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 
@@ -45,10 +45,12 @@ async function register(event) {
         return response.json()
     })
     .then(data =>{
+        // login if no errors
         output.value = data.message
         window.location.href = "/login"
     })
     .catch(error => {
+        // return error
         console.error(error)
         
 })

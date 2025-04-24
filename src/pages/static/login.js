@@ -1,5 +1,3 @@
-
-    // TODO:
 document.addEventListener("DOMContentLoaded", () =>{
     const loginForm = document.getElementById("login");
     const registerbutton = document.getElementById("register");
@@ -29,7 +27,7 @@ async function login(event) {
     .then(response =>{       
         if (!response.ok){
             return response.json().then(errorData => {
-                // REMEMBER input sanitization
+                // error
                 output.value = errorData.message 
                 throw new Error(`HTTP Error: ${errorData.error}`);
                 
@@ -38,10 +36,12 @@ async function login(event) {
         return response.json()
     })
     .then(data =>{
+        // success
         output.value = data.message
         window.location.href = "/dashboard"
     })
     .catch(error => {
+        // return error
         console.error(error)
         
 })

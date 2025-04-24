@@ -1,9 +1,11 @@
+// gets const balance from Jinja2 variable
 const balance = "{{balance}}"
 
 let unregisterPressed = false
 
 let unregisterButton = null
 
+// button submissions
 document.addEventListener("DOMContentLoaded", () => {
     unregisterButton = document.getElementById("unregister")
     const depositForm = document.getElementById("deposit");
@@ -48,6 +50,7 @@ async function deposit(event) {
         return response.json()
     })
     .then(data =>{
+        // update the result and welcome text
         output.value = data.message
         welcomeText.textContent = `You have currently have $${data.balance} in your balance.`
     })
