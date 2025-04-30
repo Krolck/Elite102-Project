@@ -1,5 +1,5 @@
-// gets const balance from Jinja2 variable
-const balance = "{{balance}}"
+// gets data from Jinja2 variable
+
 
 let unregisterPressed = false
 
@@ -18,6 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
     usernameForm.addEventListener('submit', changeUsername)
     passwordForm.addEventListener('submit', changePassword)
     transferForm.addEventListener('submit', transfer)
+
+
+
+
 })
 
 
@@ -27,6 +31,7 @@ async function deposit(event) {
     const output = event.target.elements['output']
     
     const formData = new FormData(event.target)
+    // get input data to upload to the server
     const data = Object.fromEntries(formData.entries())
 
         
@@ -47,10 +52,16 @@ async function deposit(event) {
                 
             })
         }
+
         return response.json()
     })
     .then(data =>{
+
         // update the result and welcome text
+        const history = document.getElementById("history")
+        const item = document.createElement("li")
+        item.textContent = data.history
+        history.prepend(item)
         output.value = data.message
         welcomeText.textContent = `You have currently have $${data.balance} in your balance.`
     })
@@ -87,6 +98,10 @@ async function withdraw(event) {
         return response.json()
     })
     .then(data =>{
+        const history = document.getElementById("history")
+        const item = document.createElement("li")
+        item.textContent = data.history
+        history.prepend(item)
         output.value = data.message
         welcomeText.textContent = `You have currently have $${data.balance} in your balance.`
     })
@@ -102,8 +117,6 @@ async function transfer(event) {
     
     const formData = new FormData(event.target)
     const data = Object.fromEntries(formData.entries())
-
-        
 
     fetch("transfer",{
         method: 'POST',
@@ -124,6 +137,10 @@ async function transfer(event) {
         return response.json()
     })
     .then(data =>{
+        const history = document.getElementById("history")
+        const item = document.createElement("li")
+        item.textContent = data.history
+        history.prepend(item)
         output.value = data.message
         welcomeText.textContent = `You have currently have $${data.balance} in your balance.`
     })
@@ -135,7 +152,7 @@ async function transfer(event) {
 
 async function logout() {
     fetch("logout",{
-        method: 'POST',
+        method: 'GET',
         headers: {
         },
     })
@@ -189,7 +206,10 @@ async function changeUsername(event) {
         return response.json()
     })
     .then(data =>{
-        
+        const history = document.getElementById("history")
+        const item = document.createElement("li")
+        item.textContent = data.history
+        history.prepend(item)
         output.value = data.message
         welcomeHeader.textContent =  `Hello ${inputData['value']}!`
     })
@@ -202,12 +222,10 @@ async function changeUsername(event) {
 
 async function changePassword(event) {
 
-    const welcomeHeader = document.getElementById('welcomeHeader')
     const output = event.target.elements['output']
     const formData = new FormData(event.target)
     const inputData = Object.fromEntries(formData.entries())
 
-        
 
     fetch("password",{
         method: 'POST',
@@ -228,6 +246,10 @@ async function changePassword(event) {
         return response.json()
     })
     .then(data =>{
+        const history = document.getElementById("history")
+        const item = document.createElement("li")
+        item.textContent = data.history
+        history.prepend(item)
         output.value = data.message
     })
     .catch(error => {
@@ -235,3 +257,4 @@ async function changePassword(event) {
         
 })
 }
+

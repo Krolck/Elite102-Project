@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html>
     <head>
+
+
         <script src = "../static/dashboard.js"></script>
         <link rel="stylesheet" href="../static/dashboard.css">
+        
         <body>
+
+
            <h1 id = "welcomeHeader">Hello, {{username}}! </h1> 
            <p id = "welcome"> You have currently have ${{balance}} in your balance. </p>
             <form class="form" id="deposit" onsubmit="return false">
@@ -37,6 +42,11 @@
                 <button type="submit">Change Password</button>
                 <output for="password", name = "output" id="password"></output>
             </form>
+            <ul id = "history">
+                {% for item in history %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
             
 
             <button id = "logout" onclick="logout()">Log Out</button>

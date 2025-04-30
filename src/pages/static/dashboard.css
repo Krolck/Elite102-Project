@@ -17,16 +17,17 @@ body {
   }
 
 form{
+    position: relative;
     background-color: #9ACBD0;
     padding: 20px;
     border-radius: 10px;
     width: 600px;
-    height: 80px;
+    height: 120px;
     padding: 70px 0;
     font-family: Garamond, serif;
     margin-left: auto;
     float: left;
-    font-size: 20px;
+    font-size: 20px;    
   }
 
 
@@ -52,16 +53,21 @@ form[id = "transfer"] {
 
 
 
-form[id = "username"],form[id = "password"]  {
+form[id = "username"]  {
     margin-bottom: 20px;
-    margin-left: 20px;
-    float: right;
+
+    position: absolute;
+    float: left;
+    margin-top: 300px;
 }
 
+form[id = "password"] {
+    margin-bottom: 20px;
 
-
-
-
+    position: absolute;
+    float: left;
+    margin-top: 600px;
+}
 
 
 
@@ -107,8 +113,8 @@ button[id="logout"] {
     position: relative;
     height: 70px;
     z-index: 1;
-    margin-top: 800px;
-    margin-left: 130px;
+    margin-top: 0px;
+    margin-left: 45%;
 
 }
 button[id="unregister"] {
@@ -116,7 +122,7 @@ button[id="unregister"] {
     height: 70px;   
     z-index: 2;
     margin-top: 20px;
-    margin-left: 130px;
+    margin-left: 45%;
 }
 
 
@@ -153,12 +159,39 @@ input[type="number"] {
     font-size: 25px;
 }
 
-p {
+p{
     font-size: 40px;
     text-align: center;
     margin-top: 20px;
     color: #002ead;
     font-family: Garamond, serif;
+}
+
+ul{
+    margin: 0;
+    padding: 0;
+    height:800px;
+    width: 600px;
+    overflow-y: scroll;
+    font-size: 40px;
+    text-align: left;
+    margin-top: 20px;
+    background-color: #4fb5c7;
+    font-family: Garamond, serif;
+    list-style-type: none;
+    float: center;
+    margin-left: auto;
+    margin-right: auto; 
+}
+li{
+
+    font-size: 40px;
+    text-align: center;
+    width: 100%;
+    margin-top: 20px;
+    background-color: #317581;
+    font-family: Garamond, serif;
+    float: center;
 }
 
 
@@ -180,3 +213,4 @@ output {
     color: #000000;
     font-family: Garamond, serif;
 }
+

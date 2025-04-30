@@ -4,15 +4,12 @@ from flask_login import LoginManager, UserMixin, login_required, login_user, log
 from getpass import getpass 
 from mysql.connector import connect, Error
 from flask_bcrypt import Bcrypt
-
 from decimal import Decimal
+from datetime import datetime
 
 """
 TODO: 
-- Set Up DB // Done
-- Set Up CLI Account System
-- Set Up Flask 
-- Transfer CLI To Full Stack App with UI
+
 """
 
 #// CONSTANTS
@@ -22,6 +19,14 @@ id INT PRIMARY KEY AUTO_INCREMENT UNIQUE NOT NULL,
 username VARCHAR(80) UNIQUE NOT NULL,
 password VARCHAR(80) NOT NULL,
 balance DECIMAL(65, 2) DEFAULT 0
+)
+"""
+
+HISTORY_QUERY = """CREATE TABLE IF NOT EXISTS history (
+id INT PRIMARY KEY AUTO_INCREMENT UNIQUE NOT NULL,
+account_id INT NOT NULL,
+msg VARCHAR(255) NOT NULL,
+date DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 """
 
@@ -51,6 +56,7 @@ def initDB():
     cursor = connection.cursor()
     # cursor.execute("CREATE DATABASE IF NOT EXISTS bank")
     cursor.execute(ACCOUNTS_QUERY) # Delete later
+    cursor.execute(HISTORY_QUERY) # Delete later
     connection.commit()
     cursor.close()
     return connection
@@ -65,6 +71,29 @@ def commitDB(connection):
     connection.commit()
     closeDB(connection)
 
+# creates history message in the database
+def createMessage(message, id):
+    connection = initDB()
+    cursor = connection.cursor()
+    cursor.execute("INSERT INTO history (account_id, msg) VALUES (%s, %s)", (id, message))
+    commitDB(connection)
+
+# return full history
+def getHistory(id):
+    connection = initDB()
+    cursor = connection.cursor()
+    cursor.execute("SELECT msg FROM history WHERE account_id = %s", (id,))
+    messages = cursor.fetchall()
+    cursor.execute("SELECT date FROM history WHERE account_id = %s", (id,))
+    dates = cursor.fetchall()
+    closeDB(connection)
+    newHistory = []
+    for i, item in enumerate(messages):
+        newItem = item[0]
+        newItem +=  f" | {dates[i][0]}"
+        newHistory.append(newItem)
+    newHistory.reverse()
+    return newHistory
 
 # User data model 
 class User(UserMixin):
@@ -102,8 +131,9 @@ def register():
 
         cursor = connection.cursor()
         cursor.execute("INSERT INTO accounts (username, password) VALUES (%s, %s)", (username, password))
+        id = cursor.lastrowid
         commitDB(connection)
-
+        createMessage(f"Register Account", id)
         return jsonify({'message': f'Successfully registered {username}'}), 201
 
     except Error as err:
@@ -131,14 +161,16 @@ def login():
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM accounts WHERE username = %s AND password = %s", (username, password))
         account = cursor.fetchone() 
-        closeDB(connection)
+
         
         # if credentials are valid, create a user object and log in
         if account:
             user = loadUser(account[0])
             login_user(user)
+            createMessage(f"Logged In ", account[0])
             return jsonify({'message': f'Successfully Logged in'}), 200
         else:
+            closeDB(connection)
             return jsonify({ "message": f'Invalid Credentials. Please Try Again.'}), 401
             
     except Error as err:
@@ -161,16 +193,20 @@ def loadUser(id):
 def unauthorized():
     return jsonify({'message': "Unauthorized"}), 401
 
-@app.route("/logout", methods = ["POST"])
+@app.route("/logout", methods = ["GET"])
 @login_required
 def logout():
+    print("Logout")
+    createMessage(f"Logged Out", current_user.id)
     logout_user()
+
     return "Logout"
 
 @app.route("/dashboard", methods = ["GET"])
 @login_required
 def dashboard():
-    return render_template("dashboard.html", username = current_user.username, balance = current_user.balance)
+    history = getHistory(current_user.id)
+    return render_template("dashboard.html", username = current_user.username, balance = current_user.balance, history = history)
 
 
 @app.route("/unregister", methods = ["POST"])
@@ -195,7 +231,9 @@ def deposit():
         cursor = connection.cursor()
         cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, current_user.id))
         commitDB(connection)
-        return jsonify({'message' : f"Deposited ${amount}.", 'balance' : amount + current_user.balance})
+        createMessage(f"Deposited ${amount}", current_user.id)
+        history = getHistory(current_user.id)
+        return jsonify({'message' : f"Deposited ${amount}.", 'balance' : amount + current_user.balance, 'history' : history[0]} )
     except ValueError as err:
         print(err)
         return jsonify({'message' : "Please Enter a valid amount."})
@@ -212,6 +250,7 @@ def transfer():
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM accounts WHERE username = %s", (data['username'],))
         account = cursor.fetchone() 
+
         # Fix nesting later
         if account:
             amount = Decimal("{:.2f}".format(float(data['amount'])))
@@ -221,7 +260,9 @@ def transfer():
             cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
             cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, account[0]))
             commitDB(connection)
-            return jsonify({'message' : f"Transferred ${amount} to {data['username']}. Your new balance is ${current_user.balance - amount}.", 'balance' :  current_user.balance - amount})
+            createMessage(f"Transferred ${amount} to {data['username']}", current_user.id)
+            history = getHistory(current_user.id)
+            return jsonify({'message' : f"Transferred ${amount} to {data['username']}. Your new balance is ${current_user.balance - amount}.", 'balance' :  current_user.balance - amount, 'history' : history[0]})
         else:
             return jsonify({ "message": f'Invalid Credentials. Please Try Again.'}), 401        
     except Error as err:
@@ -243,7 +284,9 @@ def withdraw():
             return jsonify({'message' : f"You only have {current_user.balance}. You can't withdraw {amount}!",'balance' : current_user.balance })
         cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
         closeDB(connection)
-        return jsonify({'message' : f"Withdrew ${amount}. Your new balance is ${current_user.balance}.", 'balance' :  current_user.balance - amount})
+        createMessage(f"Withdrew ${amount}", current_user.id)
+        history = getHistory(current_user.id)
+        return jsonify({'message' : f"Withdrew ${amount}. Your new balance is ${current_user.balance}.", 'balance' :  current_user.balance - amount, 'history' : history[0]})
     except ValueError as err:
         jsonify({'message' : "Please Enter a valid amount"})
 
@@ -251,6 +294,7 @@ def withdraw():
 @app.route("/username", methods = ["POST"])
 @login_required
 def changeUsername():
+    # change data['value'] to data['username'] later
     try:
         data = request.get_json()
         print(data)
@@ -258,7 +302,9 @@ def changeUsername():
         cursor = connection.cursor()
         cursor.execute("UPDATE accounts SET username = %s WHERE id = %s", (data['value'], current_user.id))
         commitDB(connection)
-        return jsonify({'message' : f"Username changed to {data['value']}"})
+        createMessage(f"Changed username to {data['value']}", current_user.id)
+        history = getHistory(current_user.id)
+        return jsonify({'message' : f"Username changed to {data['value']}",'history' : history[0]})
     except Exception as err:
         print(err)
         if err.errno == 1062:
@@ -274,7 +320,9 @@ def changePassword():
         cursor = connection.cursor()
         cursor.execute("UPDATE accounts SET password = %s WHERE id = %s", (data['value'], current_user.id))
         commitDB(connection)
-        return jsonify({'message' : f"Password changed to {data['value']}"})
+        createMessage(f"Changed Password", current_user.id)
+        history = getHistory(current_user.id)
+        return jsonify({'message' : f"Password Changed",'history' : history[0]})
     except Error as err:
         print(err)
         return jsonify({'message' : f"{err.errno} : {err.msg}"})
