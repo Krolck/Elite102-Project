@@ -261,6 +261,7 @@ def transfer():
             cursor.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (amount, account[0]))
             commitDB(connection)
             createMessage(f"Transferred ${amount} to {data['username']}", current_user.id)
+            createMessage(f"{current_user.username} transferred ${amount} to you!", account[0])
             history = getHistory(current_user.id)
             return jsonify({'message' : f"Transferred ${amount} to {data['username']}. Your new balance is ${current_user.balance - amount}.", 'balance' :  current_user.balance - amount, 'history' : history[0]})
         else:
@@ -280,13 +281,15 @@ def withdraw():
         data = request.get_json()
         # Makes decimal to 2 decimal places
         amount = Decimal("{:.2f}".format(float(data['amount'])))
+        print(amount)
         if amount > current_user.balance:
             return jsonify({'message' : f"You only have {current_user.balance}. You can't withdraw {amount}!",'balance' : current_user.balance })
         cursor.execute("UPDATE accounts SET balance = balance - %s WHERE id = %s", (amount, current_user.id))
-        closeDB(connection)
+        commitDB(connection)
         createMessage(f"Withdrew ${amount}", current_user.id)
         history = getHistory(current_user.id)
-        return jsonify({'message' : f"Withdrew ${amount}. Your new balance is ${current_user.balance}.", 'balance' :  current_user.balance - amount, 'history' : history[0]})
+        print(current_user.balance )
+        return jsonify({'message' : f"Withdrew ${amount}. Your new balance is ${current_user.balance - amount}.", 'balance' :  current_user.balance - amount, 'history' : history[0]})
     except ValueError as err:
         jsonify({'message' : "Please Enter a valid amount"})
 
